@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Website with Chatbot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+
+      /* Background image from static folder */
+      background: url("{{ url_for('static', filename='AI_Image.png') }}") no-repeat center center fixed;
+      background-size: cover;
+
+      /* For readability of text on image */
+      color: white;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+    }
+
+    .main-content {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    /* Chatbot floating button */
+    #chat-toggle-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      z-index: 999;
+    }
+
+    /* Chatbot box */
+    #chatbox-container {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 450px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 998;
+      color: black; /* chat text color */
+    }
+
+    .chat-header {
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .chat-body {
+      padding: 10px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .chat-footer {
+      padding: 10px;
+      text-align: center;
+    }
+
+    button {
+      margin: 5px;
+      padding: 8px 12px;
+      font-size: 0.9em;
+      cursor: pointer;
+    }
+
+    .control-btn {
+      font-size: 0.8em;
+      padding: 4px 8px;
+      margin: 3px;
+      background-color: #eee;
+      border: 1px solid #ccc;
+    }
+
+    .loading {
+      font-style: italic;
+      color: gray;
+    }
+
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="main-content">
+  Welcome to AI IT Support Website
+</div>
+
+<!-- Floating Chat Button -->
+<button id="chat-toggle-btn">💬</button>
+
+<!-- Chatbox Panel -->
+<div id="chatbox-container">
+  <div class="chat-header">IT Support Chatbot</div>
+  <div class="chat-body">
+    <div id="message"></div>
+    <div id="options"></div>
+    <div id="loading" class="loading"></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div class="chat-footer">
+    <div id="controls"></div>
+  </div>
+</div>
+
+<script>
+  let path = [];
+
+  const toggleBtn = document.getElementById('chat-toggle-btn');
+  const chatboxContainer = document.getElementById('chatbox-container');
+  const messageDiv = document.getElementById('message');
+  const optionsDiv = document.getElementById('options');
+  const controlsDiv = document.getElementById('controls');
+  const loadingDiv = document.getElementById('loading');
+  const errorDiv = document.getElementById('error');
+
+  // Toggle chatbot
+  toggleBtn.onclick = () => {
+    chatboxContainer.style.display = 
+      chatboxContainer.style.display === 'flex' ? 'none' : 'flex';
+    if (chatboxContainer.style.display === 'flex') startChat();
+  };
+
+  function showLoading() {
+    loadingDiv.textContent = 'Loading...';
+    errorDiv.textContent = '';
+  }
+
+  function hideLoading() {
+    loadingDiv.textContent = '';
+  }
+
+  function showError(msg) {
+    errorDiv.textContent = msg || 'An error occurred.';
+    hideLoading();
+  }
+
+  function clearMessage() {
+    messageDiv.innerHTML = '';
+    optionsDiv.innerHTML = '';
+    errorDiv.innerHTML = '';
+  }
+
+  function showMessage(text) {
+    messageDiv.innerHTML = `<strong>${text}</strong>`;
+    optionsDiv.innerHTML = '';
+    hideLoading();
+    showControlButtons();
+  }
+
+  function showOptions(options) {
+    optionsDiv.innerHTML = '';
+    options.forEach(opt => {
+      const btn = document.createElement('button');
+      btn.innerText = opt;
+      btn.onclick = () => {
+        path.push(opt);
+        fetchOptions(path);
+      };
+      optionsDiv.appendChild(btn);
+    });
+    showControlButtons();
+    hideLoading();
+  }
+
+  function startChat() {
+    path = [];
+    clearMessage();
+    showLoading();
+    fetch('/get_root')
+      .then(res => res.json())
+      .then(showOptions)
+      .catch(() => showError("Couldn't load options. Please try again."));
+  }
+
+  function fetchOptions(path) {
+    clearMessage();
+    showLoading();
+    fetch('/get_options', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path })
+    })
+    .then(res => res.json())
+    .then(response => {
+      if (response.type === 'message') {
+        showMessage(response.data);
+      } else if (response.type === 'options') {
+        showOptions(response.data);
+      }
+    })
+    .catch(() => showError("Couldn't fetch response. Try again."));
+  }
+
+  function showControlButtons() {
+    controlsDiv.innerHTML = '';
+
+    const startOverBtn = document.createElement('button');
+    startOverBtn.innerText = 'Start Over';
+    startOverBtn.className = 'control-btn';
+    startOverBtn.onclick = startChat;
+    controlsDiv.appendChild(startOverBtn);
+
+    if (path.length > 0) {
+      const backBtn = document.createElement('button');
+      backBtn.innerText = 'Back';
+      backBtn.className = 'control-btn';
+      backBtn.onclick = () => {
+        path.pop();
+        if (path.length === 0) {
+          startChat();
+        } else {
+          fetchOptions(path);
+        }
+      };
+      controlsDiv.appendChild(backBtn);
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "Hardware": {
+    "Surface": {
+      "Warranty": "To process a Surface warranty, contact Microsoft Support with the serial number..."
+    },
+    "Laptop": {
+      "Battery Issue": "Check battery health with `powercfg /batteryreport`..."
+    }
+  },
+  "Software": {
+    "Windows": {
+      "Activation": "Use your corporate license key or contact IT Helpdesk..."
+    },
+    "Outlook": {
+      "Email Sync": "Try clearing the cache or resetting the profile..."
+    }
+  }
+}
