@@ -11,3 +11,7 @@ This is a lightweight Flask-based web chatbot designed to help users with IT sup
 ```bash
 git clone https://github.com/TACTICAL-HACK/Python_Website_Chatbot.git
 cd Python_Website_Chatbot
+
+python3 app.py
+
+#the website will be found on http://localhost:5000/
